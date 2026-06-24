@@ -53,3 +53,22 @@ export function applyDoubleTapBalance(players: Player[], targetId: number): Play
 export function calcMoney(score: number, pricePerPoint: number): number {
   return score * pricePerPoint;
 }
+
+/** Giá mỗi điểm mặc định khi chia tiền bàn lúc kết thúc. */
+export const DEFAULT_PRICE_PER_POINT = 3000;
+
+/**
+ * Chia tiền bàn lúc kết thúc: mỗi người trả phần chia đều (tổng tiền ÷ số người),
+ * trừ đi tiền thắng theo điểm (điểm × giá mỗi điểm). Người trả nhiều nhất chỉ về 0,
+ * không nhận lại tiền dư dù điểm cao hơn phần chia đều.
+ */
+export function calcSettlement(
+  score: number,
+  totalMoney: number,
+  playerCount: number,
+  pricePerPoint: number
+): number {
+  if (playerCount === 0) return 0;
+  const baseShare = totalMoney / playerCount;
+  return Math.max(0, baseShare - score * pricePerPoint);
+}

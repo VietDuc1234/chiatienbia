@@ -19,6 +19,7 @@ import AddPlayerModal from "./AddPlayerModal";
 import SettingsModal from "./SettingsModal";
 import NewSessionModal from "./NewSessionModal";
 import HistoryModal from "./HistoryModal";
+import EndSessionModal from "./EndSessionModal";
 import { useAppState } from "@/lib/app-state-context";
 import { applyChip, applyDoubleTapBalance, applyManualAdjust } from "@/lib/scoring";
 import { playScoreSound } from "@/lib/sound";
@@ -26,7 +27,7 @@ import type { ChipType, Player } from "@/lib/types";
 
 const CHIPS: ChipType[] = ["dot", "ball14", "ball15", "burn"];
 
-type ActiveModal = "addPlayer" | "settings" | "newSession" | "history" | null;
+type ActiveModal = "addPlayer" | "settings" | "newSession" | "history" | "endSession" | null;
 
 export default function Board() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -80,7 +81,11 @@ export default function Board() {
 
   return (
     <div className="flex flex-1 flex-col">
-      <Header onToggleSidebar={() => setSidebarOpen((v) => !v)} onToggleTheme={toggleTheme} />
+      <Header
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        onToggleTheme={toggleTheme}
+        onEndSession={() => setActiveModal("endSession")}
+      />
 
       <div className="relative flex flex-1 overflow-hidden">
         <Sidebar
@@ -112,6 +117,7 @@ export default function Board() {
         />
         <HistoryModal open={activeModal === "history"} onClose={() => setActiveModal(null)} />
         <SettingsModal open={activeModal === "settings"} onClose={() => setActiveModal(null)} />
+        <EndSessionModal open={activeModal === "endSession"} onClose={() => setActiveModal(null)} />
 
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <main className="flex flex-1 overflow-hidden p-3 gap-3 flex-col portrait:flex-col landscape:flex-row">
