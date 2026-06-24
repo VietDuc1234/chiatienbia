@@ -10,9 +10,29 @@ import {
   type ReactNode,
   type SetStateAction,
 } from "react";
-import type { AppState } from "./types";
+import { isValidAppState, type AppState } from "./types";
 
 const SAVE_DEBOUNCE_MS = 350;
+const LS_KEY = "chiatienbia-state";
+
+function readFromLocalStorage(): AppState | null {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return isValidAppState(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeToLocalStorage(state: AppState) {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  } catch {
+    // quota exceeded hoặc private mode — bỏ qua
+  }
+}
 
 interface AppStateContextValue {
   state: AppState | null;
@@ -25,7 +45,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState | null>(null);
   const skipNextSave = useRef(false);
 
+  // Load: localStorage trước (instant) → API sau (sync từ server)
   useEffect(() => {
+    const cached = readFromLocalStorage();
+    if (cached) {
+      skipNextSave.current = true;
+      setState(cached);
+    }
+
     let active = true;
     fetch("/api/state")
       .then((res) => res.json())
@@ -33,12 +60,16 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         if (!active) return;
         skipNextSave.current = true;
         setState(data);
+      })
+      .catch(() => {
+        // Offline hoặc API lỗi — giữ nguyên localStorage
       });
     return () => {
       active = false;
     };
   }, []);
 
+  // Save: localStorage ngay lập tức + API debounce
   useEffect(() => {
     if (state === null) return;
     if (skipNextSave.current) {
@@ -46,11 +77,15 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    writeToLocalStorage(state);
+
     const timer = setTimeout(() => {
       fetch("/api/state", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(state),
+      }).catch(() => {
+        // API lỗi — localStorage đã lưu rồi, không cần xử lý thêm
       });
     }, SAVE_DEBOUNCE_MS);
 
@@ -65,3 +100,4 @@ export function useAppState() {
   if (!ctx) throw new Error("useAppState phải dùng trong AppStateProvider");
   return ctx;
 }
+
