@@ -15,15 +15,20 @@ import Header from "./Header";
 import Sidebar from "./Sidebar";
 import PlayerCard from "./PlayerCard";
 import ScoreChip, { ChipFace } from "./ScoreChip";
+import AddPlayerModal from "./AddPlayerModal";
+import SettingsModal from "./SettingsModal";
 import { useAppState } from "@/lib/app-state-context";
 import { applyChip, applyDoubleTapBalance, applyManualAdjust } from "@/lib/scoring";
 import type { ChipType, Player } from "@/lib/types";
 
 const CHIPS: ChipType[] = ["dot", "ball14", "ball15", "burn"];
 
+type ActiveModal = "addPlayer" | "settings" | null;
+
 export default function Board() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [draggingChip, setDraggingChip] = useState<ChipType | null>(null);
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const { state, setState } = useAppState();
 
   const sensors = useSensors(
@@ -74,7 +79,21 @@ export default function Board() {
       <Header onToggleSidebar={() => setSidebarOpen((v) => !v)} onToggleTheme={toggleTheme} />
 
       <div className="relative flex flex-1 overflow-hidden">
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <Sidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          onAddPlayer={() => {
+            setActiveModal("addPlayer");
+            setSidebarOpen(false);
+          }}
+          onOpenSettings={() => {
+            setActiveModal("settings");
+            setSidebarOpen(false);
+          }}
+        />
+
+        <AddPlayerModal open={activeModal === "addPlayer"} onClose={() => setActiveModal(null)} />
+        <SettingsModal open={activeModal === "settings"} onClose={() => setActiveModal(null)} />
 
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
           <main className="flex flex-1 gap-3 overflow-auto p-3 portrait:flex-col landscape:flex-row">
