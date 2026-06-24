@@ -45,6 +45,12 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState | null>(() => readFromLocalStorage());
   const skipNextSave = useRef(state !== null);
   const hasLocalEdit = useRef(false);
+  const latestStateRef = useRef(state);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
 
   // Load: localStorage đã đọc ngay khi init state (instant) → API sau (sync từ server)
   useEffect(() => {
@@ -95,7 +101,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     hasLocalEdit.current = true;
     writeToLocalStorage(state);
 
-    const timer = setTimeout(() => {
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
       fetch("/api/state", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,8 +112,36 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       });
     }, SAVE_DEBOUNCE_MS);
 
-    return () => clearTimeout(timer);
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+    };
   }, [state]);
+
+  // Đóng tab/trình duyệt trước khi debounce kịp gửi API → mất bản ghi mới nhất.
+  // Bắt visibilitychange + pagehide để gửi ngay phần đang chờ bằng sendBeacon (chạy được lúc unload).
+  useEffect(() => {
+    function flushPendingSave() {
+      if (!saveTimerRef.current || !latestStateRef.current) return;
+      clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = null;
+      const blob = new Blob([JSON.stringify(latestStateRef.current)], { type: "application/json" });
+      navigator.sendBeacon("/api/state", blob);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") flushPendingSave();
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("pagehide", flushPendingSave);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("pagehide", flushPendingSave);
+    };
+  }, []);
 
   return <AppStateContext.Provider value={{ state, setState }}>{children}</AppStateContext.Provider>;
 }
