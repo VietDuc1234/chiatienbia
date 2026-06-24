@@ -2,8 +2,8 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { motion } from "motion/react";
-import React, { useEffect, useRef, useState } from "react";
-import type { Player } from "@/lib/types";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { PLAYER_COLORS, type Player } from "@/lib/types";
 import Image from "next/image";
 
 const HOLD_DELAY_MS = 400;
@@ -57,6 +57,8 @@ function useLongPress(onLongPress: () => void, delayMs = 500) {
     }
   }
 
+  useEffect(() => stop, []);
+
   function handleClick(e: React.MouseEvent) {
     if (isTriggered.current) {
       e.preventDefault();
@@ -103,9 +105,37 @@ function hslToHex(h: number, s: number, l: number): string {
   return `#${f(0)}${f(8)}${f(4)}`;
 }
 
+function hexToHue(hex: string): number {
+  const color = hex.replace("#", "");
+  const r = parseInt(color.substring(0, 2), 16) / 255;
+  const g = parseInt(color.substring(2, 4), 16) / 255;
+  const b = parseInt(color.substring(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  if (delta === 0) return 0;
+  let hue: number;
+  if (max === r) hue = ((g - b) / delta) % 6;
+  else if (max === g) hue = (b - r) / delta + 2;
+  else hue = (r - g) / delta + 4;
+  hue *= 60;
+  return hue < 0 ? hue + 360 : hue;
+}
+
+// Né hue gần các màu cố định (PLAYER_COLORS) để màu random không bị lẫn với người chơi khác.
+const FIXED_PALETTE_HUES = PLAYER_COLORS.map(hexToHue);
+const HUE_EXCLUSION_MARGIN = 25;
+
+function isHueTooCloseToPalette(hue: number): boolean {
+  return FIXED_PALETTE_HUES.some((paletteHue) => {
+    const diff = Math.abs(hue - paletteHue) % 360;
+    return Math.min(diff, 360 - diff) < HUE_EXCLUSION_MARGIN;
+  });
+}
+
 function generateRandomColor(): string {
   let hue = Math.floor(Math.random() * 360);
-  while (hue >= 250 && hue <= 325) {
+  while ((hue >= 250 && hue <= 325) || isHueTooCloseToPalette(hue)) {
     hue = Math.floor(Math.random() * 360);
   }
   const saturation = 85 + Math.floor(Math.random() * 10); // 85% - 95%
@@ -152,7 +182,7 @@ export default function PlayerCard({
     setIsEditingName(false);
   }
 
-  const isLight = isLightColor(player.color);
+  const isLight = useMemo(() => isLightColor(player.color), [player.color]);
   const textClass = isLight ? "text-slate-900" : "text-white";
   const borderClass = isLight ? "border-slate-900/30" : "border-white/30";
 
@@ -176,6 +206,7 @@ export default function PlayerCard({
           e.stopPropagation();
           onColorChange?.(generateRandomColor());
         }}
+        onDoubleClick={(e) => e.stopPropagation()}
         className="absolute bottom-[-10px] left-[-10px] w-24 h-24 select-none object-contain z-10 cursor-pointer active:scale-90 transition-transform"
       />
 
@@ -199,6 +230,7 @@ export default function PlayerCard({
       ) : (
         <span
           {...longPressHandlers}
+          onDoubleClick={(e) => e.stopPropagation()}
           className={`truncate font-extrabold max-w-[30%] text-[28px] cursor-pointer relative z-10 ${textClass}`}
         >
           {player.name}

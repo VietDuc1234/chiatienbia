@@ -150,7 +150,13 @@ export default function Board() {
             </div>
           </main>
 
-          <DragOverlay>{draggingChip ? <ChipFace chip={draggingChip} /> : null}</DragOverlay>
+          <DragOverlay>
+            {draggingChip ? (
+              <div className="portrait:size-20 landscape:flex landscape:w-16 landscape:h-16">
+                <ChipFace chip={draggingChip} />
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       </div>
     </div>
