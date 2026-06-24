@@ -42,22 +42,19 @@ interface AppStateContextValue {
 const AppStateContext = createContext<AppStateContextValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState | null>(null);
-  const skipNextSave = useRef(false);
+  const [state, setState] = useState<AppState | null>(() => readFromLocalStorage());
+  const skipNextSave = useRef(state !== null);
+  const hasLocalEdit = useRef(false);
 
-  // Load: localStorage trước (instant) → API sau (sync từ server)
+  // Load: localStorage đã đọc ngay khi init state (instant) → API sau (sync từ server)
   useEffect(() => {
-    const cached = readFromLocalStorage();
-    if (cached) {
-      skipNextSave.current = true;
-      setState(cached);
-    }
-
     let active = true;
     fetch("/api/state")
       .then((res) => res.json())
       .then((data: AppState) => {
-        if (!active) return;
+        // Nếu người dùng đã sửa state (ghi điểm...) trong lúc chờ API,
+        // bỏ qua response cũ này để không đè mất thay đổi mới hơn.
+        if (!active || hasLocalEdit.current) return;
         skipNextSave.current = true;
         setState(data);
       })
@@ -69,6 +66,24 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Đồng bộ giữa các tab cùng trình duyệt: tab khác ghi localStorage → tab này cập nhật theo
+  useEffect(() => {
+    function handleStorage(e: StorageEvent) {
+      if (e.key !== LS_KEY || !e.newValue) return;
+      try {
+        const parsed = JSON.parse(e.newValue);
+        if (isValidAppState(parsed)) {
+          skipNextSave.current = true;
+          setState(parsed);
+        }
+      } catch {
+        // dữ liệu hỏng từ tab khác — bỏ qua
+      }
+    }
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   // Save: localStorage ngay lập tức + API debounce
   useEffect(() => {
     if (state === null) return;
@@ -77,6 +92,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    hasLocalEdit.current = true;
     writeToLocalStorage(state);
 
     const timer = setTimeout(() => {
