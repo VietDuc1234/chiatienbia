@@ -47,6 +47,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const hasLocalEdit = useRef(false);
   const latestStateRef = useRef(state);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSaveRef = useRef(false);
 
   useEffect(() => {
     latestStateRef.current = state;
@@ -100,6 +101,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
     hasLocalEdit.current = true;
     writeToLocalStorage(state);
+    pendingSaveRef.current = true;
 
     saveTimerRef.current = setTimeout(() => {
       saveTimerRef.current = null;
@@ -107,9 +109,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(state),
-      }).catch(() => {
-        // API lỗi — localStorage đã lưu rồi, không cần xử lý thêm
-      });
+      })
+        .catch(() => {
+          // API lỗi — localStorage đã lưu rồi, không cần xử lý thêm
+        })
+        .finally(() => {
+          pendingSaveRef.current = false;
+        });
     }, SAVE_DEBOUNCE_MS);
 
     return () => {
@@ -120,13 +126,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, [state]);
 
-  // Đóng tab/trình duyệt trước khi debounce kịp gửi API → mất bản ghi mới nhất.
-  // Bắt visibilitychange + pagehide để gửi ngay phần đang chờ bằng sendBeacon (chạy được lúc unload).
+  // Đóng tab/trình duyệt trước khi debounce/request kịp xong → mất bản ghi mới nhất.
+  // pendingSaveRef vẫn true suốt từ lúc bắt đầu debounce cho tới khi fetch POST thật sự
+  // hoàn tất (không tắt ngay khi timer chạy), nên flush phải bắt được cả lúc fetch đang bay,
+  // vì trình duyệt có thể hủy fetch đó khi trang đóng — sendBeacon mới sống sót qua unload.
   useEffect(() => {
     function flushPendingSave() {
-      if (!saveTimerRef.current || !latestStateRef.current) return;
-      clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = null;
+      if (!pendingSaveRef.current || !latestStateRef.current) return;
+      pendingSaveRef.current = false;
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
       const blob = new Blob([JSON.stringify(latestStateRef.current)], { type: "application/json" });
       navigator.sendBeacon("/api/state", blob);
     }
