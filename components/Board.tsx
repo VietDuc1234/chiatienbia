@@ -17,13 +17,14 @@ import PlayerCard from "./PlayerCard";
 import ScoreChip, { ChipFace } from "./ScoreChip";
 import AddPlayerModal from "./AddPlayerModal";
 import SettingsModal from "./SettingsModal";
+import NewSessionModal from "./NewSessionModal";
 import { useAppState } from "@/lib/app-state-context";
 import { applyChip, applyDoubleTapBalance, applyManualAdjust } from "@/lib/scoring";
 import type { ChipType, Player } from "@/lib/types";
 
 const CHIPS: ChipType[] = ["dot", "ball14", "ball15", "burn"];
 
-type ActiveModal = "addPlayer" | "settings" | null;
+type ActiveModal = "addPlayer" | "settings" | "newSession" | null;
 
 export default function Board() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -86,6 +87,10 @@ export default function Board() {
             setActiveModal("addPlayer");
             setSidebarOpen(false);
           }}
+          onNewSession={() => {
+            setActiveModal("newSession");
+            setSidebarOpen(false);
+          }}
           onOpenSettings={() => {
             setActiveModal("settings");
             setSidebarOpen(false);
@@ -93,6 +98,7 @@ export default function Board() {
         />
 
         <AddPlayerModal open={activeModal === "addPlayer"} onClose={() => setActiveModal(null)} />
+        <NewSessionModal open={activeModal === "newSession"} onClose={() => setActiveModal(null)} />
         <SettingsModal open={activeModal === "settings"} onClose={() => setActiveModal(null)} />
 
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
