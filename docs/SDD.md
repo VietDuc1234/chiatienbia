@@ -1,7 +1,7 @@
 # SDD — Web Tính Điểm & Chia Tiền Bi-a
 
 **Tên dự án:** chiatienbia
-**Phiên bản tài liệu:** 0.2 (cập nhật cơ chế kéo–thả)
+**Phiên bản tài liệu:** 0.3 (chốt tech stack: Next.js 16 + Vercel Blob)
 **Ngày:** 2026-06-24
 
 ---
@@ -16,13 +16,14 @@ Web app đơn giản, dùng trên điện thoại (xoay ngang), để:
 - Có nút **"Phiên mới"** để bắt đầu ván mới.
 
 ### 1.2 Phạm vi
-- Chạy **local** (1 thiết bị / LAN), không cần Internet.
-- **Không dùng database.** Toàn bộ dữ liệu lưu trong **một file `data.json`**.
-- Một người dùng/thiết bị tại một thời điểm, không cần đăng nhập.
+- **Deploy lên Vercel** (Next.js). Cũng chạy được **local** khi dev.
+- **Không dùng database quan hệ.** Dữ liệu lưu dưới dạng **một file JSON** trên **Vercel Blob** (prod). Khi dev local, fallback ghi `data.json` ở thư mục gốc (nếu chưa có Blob token).
+- Một trạng thái dùng chung (một bảng điểm), không cần đăng nhập.
 
 ### 1.3 Ngoài phạm vi (v1)
-- Đăng nhập / tài khoản; đồng bộ real-time nhiều thiết bị; thống kê/biểu đồ nâng cao.
-- Triển khai serverless production (xem ghi chú mục 9 về `data.json`).
+- Đăng nhập / tài khoản nhiều người; phân quyền.
+- Đồng bộ real-time đa thiết bị (chỉ load lại khi mở/refresh).
+- Thống kê/biểu đồ nâng cao.
 
 ---
 
@@ -57,7 +58,7 @@ Web app đơn giản, dùng trên điện thoại (xoay ngang), để:
 - **NFR-2 (Hiệu năng):** ghi điểm phản hồi tức thì (<50ms), không chờ mạng.
 - **NFR-3 (Bền dữ liệu):** không mất dữ liệu khi tắt/mở lại.
 - **NFR-4 (Triển khai đơn giản):** `npm install` → `npm start`.
-- **NFR-5 (Tương thích):** Chrome/Safari/Edge điện thoại & desktop hiện đại; dùng Pointer Events cho kéo–thả (chạy cả chuột lẫn chạm).
+- **NFR-5 (Tương thích):** Chrome/Safari/Edge điện thoại & desktop hiện đại; @dnd-kit với Pointer/Touch sensor (chạy cả chuột lẫn chạm).
 
 ---
 
@@ -124,6 +125,11 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 - `history`: mảng phiên đã lưu (mới nhất ở đầu), giới hạn ~100 mục.
 - *Ghi chú:* ngăn xếp Undo giữ ở client (không cần lưu file).
 
+### 6.1 Nơi lưu
+- **Prod (Vercel):** lưu nguyên object trên dưới dạng **một blob JSON** tên `state.json` trong **Vercel Blob** (`@vercel/blob`). Mỗi lần ghi: `put('state.json', json, { access:'public', allowOverwrite:true, addRandomSuffix:false })`; đọc: `fetch(blobUrl)` hoặc `head`/`list`.
+- **Dev (local):** nếu không có `BLOB_READ_WRITE_TOKEN` → đọc/ghi `data.json` ở thư mục gốc bằng `fs` (để dev không cần token).
+- Tách **lớp lưu trữ** `lib/storage.ts` với 2 hàm `readState()` / `writeState(state)`; tự chọn Blob hay fs theo env. Code phía trên không phụ thuộc nơi lưu.
+
 ---
 
 ## 7. Thiết kế giao diện (UI)
@@ -149,10 +155,11 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 - **Thanh công cụ** trên: Thêm người, Undo, Reset, Chia tiền, Lịch sử, Âm thanh.
 - Khi thả thành công: thẻ target nhấp nháy nhẹ + (nếu bật) phát tiếng.
 
-### 7.2 Tương tác kéo–thả (Pointer Events)
-- `pointerdown` trên chip → bắt đầu kéo (tạo bản sao chip đi theo con trỏ).
-- `pointermove` → cập nhật vị trí; xác định thẻ người chơi dưới con trỏ (`elementFromPoint`) → highlight.
-- `pointerup` → nếu trên 1 thẻ hợp lệ thì áp luật điểm; ngược lại huỷ.
+### 7.2 Tương tác kéo–thả (@dnd-kit + Framer Motion)
+- Chip = `useDraggable`; thẻ người chơi = `useDroppable`. Dùng `PointerSensor` + `TouchSensor` (kích hoạt sau khi giữ/nhích nhẹ để không cản scroll).
+- `DragOverlay` hiển thị chip "bay" theo ngón tay; thẻ đang hover → highlight (đổi viền/scale qua Framer Motion).
+- `onDragEnd`: nếu thả trúng 1 thẻ → áp luật điểm (mục 5.1); animate số điểm nhảy + thẻ nảy nhẹ; (nếu bật) phát tiếng.
+- Animation khác bằng Framer Motion: `AnimatePresence` cho thêm/xoá người chơi & mục lịch sử, transition modal.
 
 ### 7.3 Modal "Thêm người"
 - Ô nhập tên (≤12 ký tự) + [Huỷ] [Thêm]. Khoá khi đã đủ 4 người.
@@ -167,33 +174,53 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 ---
 
 ## 8. Kiến trúc & công nghệ
-- **Frontend:** HTML + CSS + JavaScript thuần (SPA 1 trang), kéo–thả bằng Pointer Events.
-- **Backend:** Node.js + **Express** — phục vụ `public/` và API đọc/ghi `data.json`.
-- **Lưu trữ:** file `data.json` thư mục gốc.
-- **Chạy:** `npm install` → `npm start` → `http://localhost:3000`.
+- **Framework:** **Next.js 16 (App Router) + React 19 + TypeScript**.
+- **Styling:** **Tailwind CSS**.
+- **Animation:** **Framer Motion** (`motion`).
+- **Kéo–thả:** **@dnd-kit** (`@dnd-kit/core`).
+- **Lưu trữ:** **Vercel Blob** (`@vercel/blob`) ở prod; fallback `fs` → `data.json` khi dev (xem 6.1).
+- **API:** Route Handlers của Next (`app/api/state/route.ts`) chạy **Node.js runtime**.
+- **Chạy:** `npm install` → `npm run dev` (local) → `http://localhost:3000`. Deploy: `vercel` / git push.
 
 ```
 chiatienbia/
-├─ server.js          # Express + API
-├─ data.json          # currentSession, history, soundOn, scoring
-├─ package.json
+├─ app/
+│  ├─ layout.tsx
+│  ├─ page.tsx                 # man hinh chinh (board)
+│  ├─ globals.css
+│  └─ api/state/route.ts       # GET/POST trang thai (nodejs runtime)
+├─ components/
+│  ├─ Board.tsx                # khung + thanh cong cu
+│  ├─ PlayerCard.tsx           # the nguoi choi (droppable)
+│  ├─ ScoreChip.tsx            # chip diem (draggable)
+│  ├─ MoneyModal.tsx
+│  ├─ AddPlayerModal.tsx
+│  └─ HistoryModal.tsx
+├─ lib/
+│  ├─ storage.ts               # readState/writeState (Blob | fs)
+│  ├─ scoring.ts               # luat diem (muc 5.1)
+│  └─ types.ts                 # kieu du lieu (State, Player, Session...)
+├─ data.json                   # chi dung khi dev local (gitignore)
 ├─ docs/SDD.md
-└─ public/
-   ├─ index.html
-   ├─ style.css
-   └─ app.js
+├─ package.json
+├─ tailwind.config.ts / postcss.config.mjs
+├─ next.config.ts
+└─ tsconfig.json
 ```
 
 ---
 
-## 9. API
+## 9. API (Next Route Handlers — `app/api/state/route.ts`)
 
 | Method | Đường dẫn | Mô tả | Body / Trả về |
 |--------|-----------|-------|----------------|
 | GET | `/api/state` | Lấy toàn bộ trạng thái | → `{ currentSession, soundOn, scoring, history }` |
 | POST | `/api/state` | Ghi đè toàn bộ trạng thái | Body: state đầy đủ → `{ ok: true }` |
 
-> **Ghi chú:** `data.json` chỉ bền khi chạy server có ổ đĩa ghi (local/VPS). Trên Vercel/serverless filesystem là tạm thời → nếu deploy cloud sau này cần đổi sang Blob/KV/DB. v1 nhắm local.
+- Khai báo `export const runtime = 'nodejs'` và `export const dynamic = 'force-dynamic'` (không cache).
+- Handler gọi `lib/storage.ts` (Blob ở prod, fs ở dev). Validate dữ liệu trước khi ghi.
+
+> **Env cần khi deploy:** `BLOB_READ_WRITE_TOKEN` (tự cấp khi tạo Vercel Blob store). Dev local không có token → tự fallback `data.json`.
 
 ---
 
@@ -208,13 +235,14 @@ chiatienbia/
 ---
 
 ## 11. Kế hoạch triển khai (milestones)
-1. **M1 — Khung & lưu trữ:** `server.js`, schema `data.json` (currentSession/history/scoring), API.
-2. **M2 — Giao diện:** layout landscape, thẻ người chơi, thanh công cụ, cột chip.
-3. **M3 — Kéo–thả & luật điểm:** Pointer Events, áp công thức zero-sum + cháy, Undo.
-4. **M4 — Người chơi:** thêm (≤4)/đổi tên/xoá, reset, âm thanh, tự lưu.
-5. **M5 — Chia tiền:** modal giá điểm, tính tiền.
-6. **M6 — Phiên & Lịch sử:** lưu phiên/phiên mới, lịch sử, copy/xoá.
-7. **M7 — Hoàn thiện:** nhắc xoay ngang, kiểm thử thủ công, README.
+1. **M0 — Scaffold:** tạo Next.js 16 + TS + Tailwind; cài `@dnd-kit/core`, `motion`, `@vercel/blob`; dọn scaffold Express/JS cũ.
+2. **M1 — Lưu trữ & API:** `lib/types.ts`, `lib/storage.ts` (Blob|fs), `app/api/state/route.ts`, `lib/scoring.ts`.
+3. **M2 — Giao diện:** layout landscape, `PlayerCard`, thanh công cụ, cột `ScoreChip`.
+4. **M3 — Kéo–thả & luật điểm:** @dnd-kit + Framer Motion, áp công thức zero-sum + cháy, Undo.
+5. **M4 — Người chơi:** thêm (≤4)/đổi tên/xoá, reset, âm thanh, tự lưu (debounce).
+6. **M5 — Chia tiền:** modal giá điểm, tính tiền.
+7. **M6 — Phiên & Lịch sử:** lưu phiên/phiên mới, lịch sử, copy/xoá.
+8. **M7 — Hoàn thiện & deploy:** nhắc xoay ngang, kiểm thử, tạo Vercel Blob store, deploy Vercel.
 
 ---
 
@@ -224,3 +252,4 @@ chiatienbia/
 - **`cháy` = −10 chỉ cho người đó** (không chia, coi như nộp phạt).
 - Các số là **ĐIỂM**; cuối ván × giá mỗi điểm ra tiền.
 - **Phiên mới giữ người, điểm về 0**; **Lịch sử có nút Copy**; **giá = 0 thì cảnh báo**; **tối đa 4 người**.
+- **Tech stack:** Next.js 16 (App Router) + React 19 + TypeScript; Tailwind CSS; Framer Motion; @dnd-kit; lưu trữ **Vercel Blob** (prod) / `data.json` fs (dev).
