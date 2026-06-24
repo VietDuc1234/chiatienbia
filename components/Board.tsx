@@ -126,12 +126,22 @@ export default function Board() {
                     onIncrement={() => updatePlayers((ps) => applyManualAdjust(ps, player.id, 1))}
                     onDecrement={() => updatePlayers((ps) => applyManualAdjust(ps, player.id, -1))}
                     onDoubleTap={() => updatePlayers((ps) => applyDoubleTapBalance(ps, player.id))}
+                    onRename={(newName) =>
+                      updatePlayers((ps) =>
+                        ps.map((p) => (p.id === player.id ? { ...p, name: newName } : p))
+                      )
+                    }
+                    onColorChange={(newColor) =>
+                      updatePlayers((ps) =>
+                        ps.map((p) => (p.id === player.id ? { ...p, color: newColor } : p))
+                      )
+                    }
                   />
                 ))
               )}
             </div>
 
-            <div className="flex shrink-0 gap-3 portrait:flex-row portrait:justify-center landscape:flex-col">
+            <div className="flex shrink-0 gap-3 my-5 portrait:flex-row portrait:justify-center landscape:flex-col">
               {CHIPS.map((chip) => (
                 <ScoreChip key={chip} chip={chip} />
               ))}
