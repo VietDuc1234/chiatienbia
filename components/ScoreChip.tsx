@@ -1,3 +1,6 @@
+"use client";
+
+import { useDraggable } from "@dnd-kit/core";
 import type { ChipType } from "@/lib/types";
 
 const CHIP_LABELS: Record<ChipType, string> = {
@@ -7,7 +10,7 @@ const CHIP_LABELS: Record<ChipType, string> = {
   burn: "cháy",
 };
 
-export default function ScoreChip({ chip }: { chip: ChipType }) {
+export function ChipFace({ chip }: { chip: ChipType }) {
   const isBurn = chip === "burn";
 
   return (
@@ -17,6 +20,24 @@ export default function ScoreChip({ chip }: { chip: ChipType }) {
         ${isBurn ? "border-red-500 text-red-500" : "border-foreground/50 text-foreground/80"}`}
     >
       {CHIP_LABELS[chip]}
+    </div>
+  );
+}
+
+export default function ScoreChip({ chip }: { chip: ChipType }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: `chip-${chip}`,
+    data: { chip },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`cursor-grab touch-none ${isDragging ? "opacity-30" : ""}`}
+    >
+      <ChipFace chip={chip} />
     </div>
   );
 }
