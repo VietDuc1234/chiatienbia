@@ -1,9 +1,0 @@
-{
-  "players": [
-    { "id": 1, "name": "THANH", "score": -10, "color": "#ff4d4d" },
-    { "id": 2, "name": "DAC", "score": -7, "color": "#ffeb3b" },
-    { "id": 3, "name": "DUC", "score": 17, "color": "#ff9800" }
-  ],
-  "pricePerPoint": 0,
-  "soundOn": true
-}
