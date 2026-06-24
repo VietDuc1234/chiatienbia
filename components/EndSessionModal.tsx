@@ -53,8 +53,8 @@ export default function EndSessionModal({ open, onClose }: EndSessionModalProps)
   return (
     <Modal open={open} onClose={onClose} title="Kết thúc & chia tiền bàn">
       <div className="flex flex-col gap-4">
-        <div className="flex gap-3">
-          <label className="flex flex-1 flex-col gap-1">
+        <div className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1">
             <span className="text-sm text-foreground/60">Tổng tiền (nghìn đồng)</span>
             <input
               type="number"
@@ -65,7 +65,7 @@ export default function EndSessionModal({ open, onClose }: EndSessionModalProps)
               className="rounded-lg border-2 border-foreground/20 bg-transparent px-3 py-2 text-base outline-none focus:border-foreground/50"
             />
           </label>
-          <label className="flex flex-1 flex-col gap-1">
+          <label className="flex flex-col gap-1">
             <span className="text-sm text-foreground/60">Giá mỗi điểm (nghìn đồng)</span>
             <input
               type="number"
