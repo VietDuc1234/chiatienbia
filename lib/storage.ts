@@ -2,7 +2,7 @@ import { get, put } from "@vercel/blob";
 import fs from "fs/promises";
 import path from "path";
 import { DEFAULT_SCORING } from "./scoring";
-import type { AppState } from "./types";
+import { PLAYER_COLORS, type AppState } from "./types";
 
 const BLOB_PATHNAME = "state.json";
 const DATA_FILE = path.join(process.cwd(), "data.json");
@@ -17,7 +17,11 @@ function defaultState(): AppState {
       id: Date.now(),
       startedAt: new Date().toISOString(),
       pricePerPoint: 0,
-      players: [],
+      players: [
+        { id: 1, name: "Thành", score: 0, color: PLAYER_COLORS[0] },
+        { id: 2, name: "Đắc", score: 0, color: PLAYER_COLORS[1] },
+        { id: 3, name: "Đức", score: 0, color: PLAYER_COLORS[2] },
+      ],
     },
     soundOn: true,
     scoring: DEFAULT_SCORING,

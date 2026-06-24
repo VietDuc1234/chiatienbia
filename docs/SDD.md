@@ -60,6 +60,7 @@ Web app đơn giản, dùng trên điện thoại (cả 2 chiều ngang/dọc), 
 | FR-12 | Sidebar điều hướng | Trượt ra từ trái kèm backdrop mờ, mở/đóng bằng ☰. Gồm 4 mục: Thêm người, Phiên mới, Lịch sử, Cài đặt (xem FR-4, FR-7, FR-8, FR-6, FR-5). |
 | FR-13 | Light/dark theme | Icon 🌗 trên header đổi theme sáng/tối; lưu lựa chọn cục bộ (localStorage), không cần lưu server. |
 | FR-14 | Cân bằng zero-sum (double-tap) | **Double-tap** (nhấn đúp/chạm đúp) vào thẻ người chơi → tự động đặt lại điểm người đó để **tổng điểm tất cả người chơi = 0**: `điểm mới = điểm cũ − tổng hiện tại`. Dùng để dồn nhanh phần lệch do `cháy` (không zero-sum, mục 5.1) về 1 người, hoặc sửa sai số sau khi chỉnh tay (FR-3). Nếu tổng đã = 0 → double-tap không đổi gì. |
+| FR-15 | Đổi tên trực tiếp (Long-press) | **Long-press** (nhấn giữ) 500ms vào tên người chơi trên thẻ → tự động chuyển thành ô nhập (inline input) để sửa tên. Tên mới được tự động lưu khi nhấn **Enter** hoặc chạm ra ngoài (**Blur**); hủy sửa khi bấm **Esc**. Không cho phép để trống, giới hạn tối đa 12 ký tự. |
 
 ---
 
@@ -295,3 +296,4 @@ chiatienbia/
 - **Layout dọc (portrait) là layout đầy đủ chức năng**, không còn màn chặn "vui lòng xoay ngang".
 - Modal **Chia tiền** gộp vào luồng **Phiên mới** (1 modal, không tách riêng).
 - Chi tiết bố cục/kích thước/ảnh wireframe: xem **[`UI-DESIGN.md`](UI-DESIGN.md)**.
+- **Nhấn giữ vào tên để sửa tên trực tiếp (FR-15):** Nhấn giữ (long-press) 500ms vào tên của người chơi trên thẻ để hiển thị ô nhập sửa tên tại chỗ, tự động lưu khi bấm Enter hoặc click ra ngoài (blur). Giới hạn tối đa 12 ký tự và không được để trống.
