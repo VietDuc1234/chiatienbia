@@ -1,8 +1,8 @@
 # UI Design — chiatienbia
 
-**Phiên bản:** 1.0
+**Phiên bản:** 1.1 (thêm double-tap cân bằng zero-sum)
 **Ngày:** 2026-06-24
-**Liên quan:** [`SDD.md`](SDD.md) §7 (Thiết kế giao diện)
+**Liên quan:** [`SDD.md`](SDD.md) §7 (Thiết kế giao diện), FR-14
 
 Tài liệu này mô tả chi tiết giao diện đã chốt với người dùng, thay thế bố cục cũ (thanh công cụ 6 icon) ở SDD §7.1. Ảnh wireframe tham chiếu nằm ở [`wireframes/`](wireframes/).
 
@@ -55,6 +55,12 @@ Kích thước **lớn hơn** bản nháp đầu để dễ bấm/kéo, áp dụ
 - Tên người chơi (chữ đậm)
 - Điểm hiện tại (số lớn, là **vùng thả** chip — xem mục 5)
 - 2 nút **−** / **+** để chỉnh điểm thủ công (không cần kéo chip), mỗi nút là ô vuông viền đậm
+
+**Cử chỉ double-tap (FR-14 — cân bằng zero-sum):**
+- Double-tap (chạm đúp trên điện thoại / double-click trên desktop) vào vùng thẻ (ngoài 2 nút −/+) → tự tính lại điểm người đó để **tổng điểm tất cả người chơi = 0**: `điểm mới = điểm cũ − tổng hiện tại`.
+- Dùng khi cần dồn nhanh phần lệch do chip `cháy` (không zero-sum) về 1 người, hoặc chốt lại trước khi mở "Phiên mới" chia tiền.
+- Phản hồi: số điểm trên thẻ nhấp nháy/đổi nhẹ qua Framer Motion để báo đã cân bằng; nếu tổng đã = 0 thì không có gì thay đổi (vẫn có thể phát hiệu ứng ngắn xác nhận "đã cân bằng").
+- Không có bước xác nhận (theo đúng tinh thần bỏ Undo/Reset) — muốn sửa lại thì dùng nút −/+ hoặc double-tap sang thẻ khác.
 
 **Landscape** (3 thẻ xếp ngang, chia đều chiều rộng còn lại sau cột chip):
 - Thẻ cao hết chiều cao vùng nội dung, font điểm 52px, nút −/+ cao 52px (xếp ngang dưới điểm).
@@ -117,3 +123,4 @@ Không có trạng thái "khoá" màn hình theo chiều xoay — người dùng
 - Thêm **nút −/+ chỉnh điểm thủ công** trên mỗi thẻ người chơi (ngoài cách kéo–thả chip).
 - Thêm **layout portrait đầy đủ chức năng** (không còn màn chặn "vui lòng xoay ngang" — xem ghi chú cập nhật FR-12 ở SDD).
 - Modal "Chia tiền" (FR-8 cũ) được gộp vào luồng **"Phiên mới"** trong sidebar — nhập giá mỗi điểm ngay khi kết thúc phiên, không còn là 1 modal/nút riêng trên thanh công cụ.
+- Thêm **double-tap vào thẻ người chơi để cân bằng zero-sum** (FR-14) — tính năng hoàn toàn mới, không có ở bản SDD gốc.

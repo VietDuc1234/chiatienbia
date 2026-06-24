@@ -1,9 +1,11 @@
 # SDD — Web Tính Điểm & Chia Tiền Bi-a
 
 **Tên dự án:** chiatienbia
-**Phiên bản tài liệu:** 0.4 (chốt UI: header tối giản + sidebar, layout dọc đầy đủ chức năng)
+**Phiên bản tài liệu:** 0.5 (thêm double-tap cân bằng zero-sum)
 **Ngày:** 2026-06-24
 
+> **Changelog 0.5:** thêm **FR-14 — double-tap vào thẻ người chơi để tự động cân bằng điểm về tổng 0** (zero-sum), dùng để dồn nhanh phần lệch do `cháy` (mục 5.1 không zero-sum) về 1 người. Xem FR-14, §5.1, §12.
+>
 > **Changelog 0.4:** chốt thiết kế giao diện chi tiết ở [`UI-DESIGN.md`](UI-DESIGN.md) (ảnh wireframe ở [`wireframes/`](wireframes/)). Thay thanh công cụ 6 icon bằng **header tối giản** (☰ + 🌗) + **sidebar** chứa Thêm người/Phiên mới/Lịch sử/Cài đặt; thêm **nút −/+ chỉnh điểm thủ công** trên thẻ người chơi; **layout dọc (portrait)** nay là layout đầy đủ chức năng, không còn màn chặn xoay ngang; gộp modal Chia tiền vào luồng Phiên mới; Undo/Reset bị bỏ, âm thanh & đổi tên/xoá người chuyển vào Cài đặt.
 
 ---
@@ -55,6 +57,7 @@ Web app đơn giản, dùng trên điện thoại (cả 2 chiều ngang/dọc), 
 | FR-11 | Header tối giản | Thanh header chỉ có 2 icon: **☰** (trái, mở/đóng sidebar) và **🌗** (phải, đổi theme). |
 | FR-12 | Sidebar điều hướng | Trượt ra từ trái kèm backdrop mờ, mở/đóng bằng ☰. Gồm 4 mục: Thêm người, Phiên mới, Lịch sử, Cài đặt (xem FR-4, FR-7, FR-8, FR-6, FR-5). |
 | FR-13 | Light/dark theme | Icon 🌗 trên header đổi theme sáng/tối; lưu lựa chọn cục bộ (localStorage), không cần lưu server. |
+| FR-14 | Cân bằng zero-sum (double-tap) | **Double-tap** (nhấn đúp/chạm đúp) vào thẻ người chơi → tự động đặt lại điểm người đó để **tổng điểm tất cả người chơi = 0**: `điểm mới = điểm cũ − tổng hiện tại`. Dùng để dồn nhanh phần lệch do `cháy` (không zero-sum, mục 5.1) về 1 người, hoặc sửa sai số sau khi chỉnh tay (FR-3). Nếu tổng đã = 0 → double-tap không đổi gì. |
 
 ---
 
@@ -86,10 +89,12 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 
 **Trường hợp đặc biệt:** nếu chỉ có 1 người chơi (n=1) → `.`,`14`,`15` cộng 0 cho người khác và target +0 (không ý nghĩa) → có thể bỏ qua/cảnh báo; `cháy` vẫn −10.
 
+**Cân bằng zero-sum (double-tap, FR-14):** vì `cháy` không zero-sum, tổng điểm tất cả người chơi (`total = Σ score`) có thể lệch khỏi 0 theo thời gian. Double-tap vào thẻ người chơi **X** → `X.score = X.score − total`, làm `total` về đúng 0 (điểm các người khác giữ nguyên). Đây là phép gán trực tiếp (giống FR-3), không lưu lịch sử bước riêng.
+
 ### 5.2 Chia tiền (theo giá mỗi điểm)
 - Nhập `pricePerPoint` (VND) cuối ván. Mỗi người: `tien = score × pricePerPoint`.
   - `< 0` → **TRẢ** `|tien|`; `> 0` → **NHẬN** `tien`; `= 0` → không.
-- Hiển thị **net** = tổng `tien`. Do `cháy` không zero-sum nên net có thể ≠ 0 → hiện ghi chú (phần lệch là tiền phạt "cháy").
+- Hiển thị **net** = tổng `tien`. Do `cháy` không zero-sum nên net có thể ≠ 0 → hiện ghi chú (phần lệch là tiền phạt "cháy"); có thể double-tap (FR-14) vào 1 người trước khi chia tiền nếu muốn net về đúng 0.
 - Làm tròn tới **đồng**, định dạng `vi-VN` (vd `50.000 đ`).
 
 ---
@@ -157,7 +162,7 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 │  └────────────────────────────────┘  │                │
 └──────────────────────────────────────┴────────────────┘
 ```
-- **Thẻ người chơi** cỡ lớn, là vùng thả chip, có 2 nút **−/+** chỉnh điểm thủ công (FR-3).
+- **Thẻ người chơi** cỡ lớn, là vùng thả chip, có 2 nút **−/+** chỉnh điểm thủ công (FR-3); double-tap vào thẻ để cân bằng zero-sum (FR-14).
 - **Cột phải**: 4 **chip** kéo được, cỡ lớn: `.`, `14`, `15`, `cháy` (viền/màu đỏ riêng). Khi đang kéo: chip "bay" theo ngón tay, thẻ người chơi nào ở dưới thì **sáng viền** (highlight) báo sẽ thả vào đó.
 - **Header** chỉ 2 icon: ☰ (mở/đóng sidebar, FR-12) và 🌗 (đổi theme, FR-13). Ở portrait, thẻ xếp chồng và chip xếp hàng ngang dưới thẻ (xem UI-DESIGN.md §6).
 - Khi thả chip thành công: thẻ target nhấp nháy nhẹ + (nếu bật âm thanh) phát tiếng.
@@ -171,6 +176,7 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 - `DragOverlay` hiển thị chip "bay" theo ngón tay; thẻ đang hover → highlight (đổi viền/scale qua Framer Motion).
 - `onDragEnd`: nếu thả trúng 1 thẻ → áp luật điểm (mục 5.1); animate số điểm nhảy + thẻ nảy nhẹ; (nếu bật) phát tiếng.
 - Nút **−/+** trên thẻ (FR-3): bấm trực tiếp, không qua drag, chỉ đổi điểm của chính thẻ đó (không zero-sum).
+- Double-tap vào thẻ (FR-14, ngoài 2 nút −/+): tính lại điểm thẻ đó để tổng = 0 (mục 5.1); nên có animation/feedback ngắn (số điểm nhấp nháy) để báo đã cân bằng.
 - Animation khác bằng Framer Motion: `AnimatePresence` cho sidebar trượt/backdrop, thêm/xoá người chơi & mục lịch sử, transition modal.
 
 ### 7.4 Modal "Thêm người"
@@ -250,6 +256,9 @@ chiatienbia/
 - Giá điểm trống/0 → tiền = 0, lưu phiên cần xác nhận.
 - `data.json` hỏng → server trả trạng thái mặc định (không crash).
 - Nút **−/+** chỉnh điểm thủ công: không giới hạn biên (điểm có thể âm); bấm liên tục vẫn áp dụng từng bước.
+- Double-tap (FR-14) khi tổng đã = 0 → không đổi điểm (đã cân bằng).
+- Double-tap khi chỉ có 1 người chơi → điểm người đó về 0 (vì `total` chính là điểm của họ).
+- Double-tap không có Undo riêng — muốn sửa lại thì dùng nút −/+ (FR-3) hoặc double-tap sang người khác.
 
 ---
 
@@ -257,7 +266,7 @@ chiatienbia/
 1. **M0 — Scaffold:** tạo Next.js 16 + TS + Tailwind; cài `@dnd-kit/core`, `motion`, `@vercel/blob`; dọn scaffold Express/JS cũ.
 2. **M1 — Lưu trữ & API:** `lib/types.ts`, `lib/storage.ts` (Blob|fs), `app/api/state/route.ts`, `lib/scoring.ts`.
 3. **M2 — Giao diện khung:** `Header` (☰/🌗), `Sidebar` (trượt + backdrop), `Board` layout landscape & portrait, `PlayerCard` (gồm nút −/+), cột/hàng `ScoreChip`, theme light/dark (localStorage).
-4. **M3 — Kéo–thả & luật điểm:** @dnd-kit + Framer Motion, áp công thức zero-sum + cháy; nút −/+ chỉnh điểm thủ công.
+4. **M3 — Kéo–thả & luật điểm:** @dnd-kit + Framer Motion, áp công thức zero-sum + cháy; nút −/+ chỉnh điểm thủ công; double-tap cân bằng zero-sum (FR-14).
 5. **M4 — Người chơi & cài đặt:** `AddPlayerModal` (thêm ≤4), `SettingsModal` (đổi tên/xoá người, bật/tắt âm thanh), tự lưu (debounce).
 6. **M5 — Phiên mới & chia tiền:** `NewSessionModal` (giá điểm → tính tiền → lưu phiên → reset điểm về 0, giữ người).
 7. **M6 — Lịch sử:** `HistoryModal`, copy/xoá phiên.
@@ -275,6 +284,7 @@ chiatienbia/
 - **Header tối giản:** chỉ ☰ (toggle sidebar) + 🌗 (theme), không còn thanh công cụ nhiều icon.
 - **Sidebar** chứa 4 hành động phụ: Thêm người / Phiên mới / Lịch sử / Cài đặt (gồm âm thanh, đổi tên/xoá người).
 - Mỗi thẻ người chơi có thêm **nút −/+ chỉnh điểm thủ công**, độc lập với kéo–thả chip; **bỏ chức năng Undo/Reset riêng**.
+- **Double-tap vào thẻ người chơi** (FR-14) tự động cân bằng điểm người đó để tổng tất cả = 0 (`điểm mới = điểm cũ − tổng hiện tại`) — công cụ nhanh xử lý phần lệch do `cháy`.
 - **Layout dọc (portrait) là layout đầy đủ chức năng**, không còn màn chặn "vui lòng xoay ngang".
 - Modal **Chia tiền** gộp vào luồng **Phiên mới** (1 modal, không tách riêng).
 - Chi tiết bố cục/kích thước/ảnh wireframe: xem **[`UI-DESIGN.md`](UI-DESIGN.md)**.
