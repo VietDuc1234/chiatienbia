@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Bi-a - Tinh diem & Chia tien</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Cot trai -->
+    <aside class="side side-left">
+      <button id="btn-add" class="side-btn" title="Them nguoi">
+        <span class="ico">👤+</span>
+      </button>
+      <button id="btn-reset" class="side-btn" title="Reset diem">
+        <span class="ico">⟳</span>
+      </button>
+    </aside>
+
+    <!-- Bang nguoi choi -->
+    <main class="board">
+      <div id="players" class="players"></div>
+    </main>
+
+    <!-- Cot phai -->
+    <aside class="side side-right">
+      <button id="btn-money" class="side-btn" title="Chia tien">
+        <span class="ico">💰</span>
+      </button>
+      <button id="btn-sound" class="side-btn" title="Bat/tat am">
+        <span class="ico">🔊</span>
+      </button>
+    </aside>
+  </div>
+
+  <!-- Modal chia tien -->
+  <div id="money-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>Chia tien cuoi van</h2>
+      <label class="price-row">
+        Gia moi diem (VND):
+        <input id="price-input" type="number" inputmode="numeric" min="0" step="1000" placeholder="vi du: 5000" />
+      </label>
+      <div id="money-result" class="money-result"></div>
+      <div class="modal-actions">
+        <button id="money-close" class="btn">Dong</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal them nguoi -->
+  <div id="add-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>Them nguoi choi</h2>
+      <input id="add-name" type="text" maxlength="12" placeholder="Ten nguoi choi" />
+      <div class="modal-actions">
+        <button id="add-cancel" class="btn btn-ghost">Huy</button>
+        <button id="add-confirm" class="btn">Them</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
