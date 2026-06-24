@@ -1,10 +1,10 @@
 # SDD — Web Tính Điểm & Chia Tiền Bi-a
 
 **Tên dự án:** chiatienbia
-**Phiên bản tài liệu:** 0.6 (chốt bước +/-, màu thẻ, chặn xoá khi điểm ≠ 0)
+**Phiên bản tài liệu:** 0.7 (localStorage hybrid, ảnh rùa đổi màu, layout landscape điều chỉnh, nút +/- to hơn)
 **Ngày:** 2026-06-24
 
-> **Changelog 0.6:** chốt 3 quyết định nghiệp vụ còn treo: nút **−/+** mỗi lần bấm **±1 điểm**, **nhấn giữ để lặp liên tục**; **giữ màu riêng cho mỗi thẻ người chơi** (field `color` vẫn dùng, nền xám ở wireframe chỉ là mockup thấp-fi); **chặn xoá người chơi nếu điểm ≠ 0** (phải đưa về 0 qua FR-3/FR-14 trước). Xem FR-3, FR-5, §6, §12.
+> **Changelog 0.7:** (1) **Lưu trữ hybrid localStorage + API** (FR-9): mọi thay đổi ghi vào `localStorage` ngay lập tức (key `chiatienbia-state`), song song POST lên `/api/state` (debounce 350ms); khi load trang đọc `localStorage` trước (hiển thị ngay, không chờ mạng), sau đó hydrate từ API — đảm bảo dữ liệu còn nguyên khi đóng/mở lại tab. (2) **Đổi màu thẻ qua ảnh rùa** thay vì click vào số điểm — click/tap vào ảnh rùa ở góc dưới trái của thẻ để random màu nền; double-click vào thẻ vẫn là zero-sum (FR-14, không còn conflict). (3) **Layout landscape**: cards xếp **dọc** (giống portrait), chip xếp **cột dọc bên phải** màn hình (flex-col, tự dãn đều chiều cao); nút +/- trong landscape xếp **hàng ngang** (flex-row). (4) **Nút +/-** rộng hơn (84px), tự dãn gần bằng chiều cao card dùng `self-stretch + flex-1`. Xem FR-2, FR-9, FR-16, §6.1, §7.1.
 >
 > **Changelog 0.5:** thêm **FR-14 — double-tap vào thẻ người chơi để tự động cân bằng điểm về tổng 0** (zero-sum), dùng để dồn nhanh phần lệch do `cháy` (mục 5.1 không zero-sum) về 1 người. Xem FR-14, §5.1, §12.
 >
@@ -47,14 +47,15 @@ Web app đơn giản, dùng trên điện thoại (cả 2 chiều ngang/dọc), 
 | Mã | Tính năng | Mô tả |
 |----|-----------|-------|
 | FR-1 | Hiển thị người chơi | Mỗi người 1 thẻ: TÊN — ĐIỂM, nền/viền theo **màu riêng** của người đó (gán khi thêm, xem FR-4/§6). Là **vùng thả** (drop target). Điểm có thể âm. Thẻ cỡ lớn, dễ bấm/kéo (UI-DESIGN §4). |
-| FR-2 | Ghi điểm bằng kéo–thả | 4 **chip** cỡ lớn: `.`, `14`, `15`, `cháy` (cột dọc ở landscape, hàng ngang ở portrait). Kéo 1 chip thả vào thẻ người chơi → áp dụng luật điểm (mục 5). Hỗ trợ cả chuột & cảm ứng. |
+| FR-2 | Ghi điểm bằng kéo–thả | 4 **chip** cỡ lớn: `.`, `14`, `15`, `cháy`. **Landscape:** cột dọc bên phải, tự dãn đều chiều cao; **Portrait:** hàng ngang dưới thẻ. Kéo 1 chip thả vào thẻ người chơi → áp dụng luật điểm (mục 5). Hỗ trợ cả chuột & cảm ứng. |
 | FR-3 | Chỉnh điểm thủ công | Mỗi thẻ người chơi có 2 nút **−/+**: mỗi lần bấm đổi **±1 điểm**; **nhấn giữ** để tự lặp liên tục (auto-repeat) cho tới khi thả tay. Không qua kéo–thả, không áp dụng công thức zero-sum mục 5.1. *(Thay cho Undo ở bản cũ — đã bỏ, xem §12.)* |
 | FR-4 | Thêm người chơi | Mục **"👤+ Thêm người"** trong sidebar → nhập tên → người mới (điểm 0, **tự gán màu** theo bảng màu cố định kế tiếp, xem §6). **Tối đa 4 người** (đủ 4 thì khoá mục). |
 | FR-5 | Đổi tên / Xoá người | Thực hiện trong modal **"⚙️ Cài đặt"** (sidebar): danh sách người chơi, mỗi người có nút đổi tên & xoá. **Nút xoá bị khoá (disable) nếu điểm người đó ≠ 0** — phải đưa điểm về 0 (qua FR-3 hoặc double-tap FR-14) mới xoá được; có hiện gợi ý/tooltip khi bị khoá. |
 | FR-6 | Bật/tắt âm thanh | Trong modal **"⚙️ Cài đặt"** (sidebar): bật/tắt tiếng khi ghi điểm. Lưu trạng thái. *(Trước đây là icon riêng trên thanh công cụ.)* |
 | FR-7 | Phiên mới & chia tiền | Mục **"➕ Phiên mới"** trong sidebar → nhập **giá mỗi điểm (VND)** → xem bảng: điểm, **tiền = điểm × giá**, nhãn TRẢ/NHẬN → **"Lưu & phiên mới"** lưu phiên vào lịch sử rồi reset điểm về 0 (**giữ người chơi**). Giá = 0 → **cảnh báo xác nhận** trước khi lưu. *(Gộp 2 chức năng Chia tiền + Lưu phiên/Phiên mới của bản cũ thành 1 luồng.)* |
 | FR-8 | Lịch sử | Mục **"📜 Lịch sử"** trong sidebar → danh sách phiên đã lưu (mới nhất trên cùng): ngày giờ, giá, điểm & tiền từng người. Mỗi mục có nút **Copy** (text) và **Xoá**. |
-| FR-9 | Tự động lưu | Mọi thay đổi tự ghi `data.json`/Blob (debounce ~350ms). Mở lại vẫn còn dữ liệu. |
+| FR-9 | Tự động lưu | Mọi thay đổi ghi vào **`localStorage`** (key `chiatienbia-state`) **ngay lập tức** (sync), và ghi lên `/api/state` (debounce ~350ms). Khi mở app: đọc `localStorage` trước (hiển thị ngay không cần chờ mạng) rồi sync từ API; đóng tab / reload / tắt máy **không mất dữ liệu** (trừ tab ẩn danh). |
+| FR-16 | Đổi màu thẻ | **Tap vào ảnh rùa** (góc dưới trái của thẻ người chơi) → random màu nền mới cho thẻ đó. Ảnh rùa có `cursor-pointer` và animation thu nhỏ khi bấm (`active:scale-90`). **Không** dùng click vào số điểm để tránh conflict với double-tap FR-14. |
 | FR-10 | Layout dọc & ngang đầy đủ chức năng | App dùng được ở **cả 2 chiều màn hình**: portrait (thẻ xếp chồng, chip hàng ngang) và landscape (thẻ xếp ngang, chip cột dọc) — không có màn hình chặn/nhắc xoay ngang. *(Thay thế hành vi "nhắc xoay ngang" của bản cũ.)* |
 | FR-11 | Header tối giản | Thanh header chỉ có 2 icon: **☰** (trái, mở/đóng sidebar) và **🌗** (phải, đổi theme). |
 | FR-12 | Sidebar điều hướng | Trượt ra từ trái kèm backdrop mờ, mở/đóng bằng ☰. Gồm 4 mục: Thêm người, Phiên mới, Lịch sử, Cài đặt (xem FR-4, FR-7, FR-8, FR-6, FR-5). |
@@ -142,6 +143,7 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 ### 6.1 Nơi lưu
 - **Prod (Vercel):** lưu nguyên object trên dưới dạng **một blob JSON** tên `state.json` trong **Vercel Blob** (`@vercel/blob`). Mỗi lần ghi: `put('state.json', json, { access:'public', allowOverwrite:true, addRandomSuffix:false })`; đọc: `fetch(blobUrl)` hoặc `head`/`list`.
 - **Dev (local):** nếu không có `BLOB_READ_WRITE_TOKEN` → đọc/ghi `data.json` ở thư mục gốc bằng `fs` (để dev không cần token).
+- **Client (localStorage):** mọi thay đổi ghi vào `localStorage` với key `chiatienbia-state` **ngay lập tức** (không debounce, sync). Khi load: đọc `localStorage` trước (hiển thị ngay lập tức, ~0ms) → hydrate từ `/api/state` nếu có dữ liệu mới hơn từ server. Đảm bảo dữ liệu không mất khi đóng/mở tab, tắt máy — chỉ mất nếu xóa cache trình duyệt hoặc dùng tab ẩn danh.
 - Tách **lớp lưu trữ** `lib/storage.ts` với 2 hàm `readState()` / `writeState(state)`; tự chọn Blob hay fs theo env. Code phía trên không phụ thuộc nơi lưu.
 
 ---
@@ -154,21 +156,21 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 ```
 ┌───────────────────────────────────────────────────────┐
 │ [☰]                                              [🌗] │  ← header tối giản
-├──────────────────────────────────────┬────────────────┤
-│  ┌────────────────────────────────┐  │     ( . )      │
-│  │  THANH        +20      [−][+]  │  │                │
-│  └────────────────────────────────┘  │    ( 14 )      │
-│  ┌────────────────────────────────┐  │                │
-│  │  DAC          -10      [−][+]  │  │    ( 15 )      │
-│  └────────────────────────────────┘  │                │
-│  ┌────────────────────────────────┐  │   ( cháy )     │
-│  │  DUC          -10      [−][+]  │  │                │
-│  └────────────────────────────────┘  │                │
-└──────────────────────────────────────┴────────────────┘
+├──────────────────────────────────────────┬────────────┤
+│  ┌──────────────────────────────────┐    │  ( . )     │
+│  │ 🐢 THANH      +20      [−] [+]  │    │  ( 14 )    │
+│  └──────────────────────────────────┘    │  ( 15 )    │
+│  ┌──────────────────────────────────┐    │ ( cháy )   │
+│  │ 🐢 DAC        -10      [−] [+]  │    │            │
+│  └──────────────────────────────────┘    │            │
+│  ┌──────────────────────────────────┐    │            │
+│  │ 🐢 DUC        -10      [−] [+]  │    │            │
+│  └──────────────────────────────────┘    │            │
+└──────────────────────────────────────────┴────────────┘
 ```
-- **Thẻ người chơi** cỡ lớn, nền/viền theo màu riêng từng người (§6), là vùng thả chip, có 2 nút **−/+** chỉnh điểm thủ công ±1/lần, giữ để lặp (FR-3); double-tap vào thẻ để cân bằng zero-sum (FR-14).
-- **Cột phải**: 4 **chip** kéo được, cỡ lớn: `.`, `14`, `15`, `cháy` (viền/màu đỏ riêng). Khi đang kéo: chip "bay" theo ngón tay, thẻ người chơi nào ở dưới thì **sáng viền** (highlight) báo sẽ thả vào đó.
-- **Header** chỉ 2 icon: ☰ (mở/đóng sidebar, FR-12) và 🌗 (đổi theme, FR-13). Ở portrait, thẻ xếp chồng và chip xếp hàng ngang dưới thẻ (xem UI-DESIGN.md §6).
+- **Cards xếp dọc** (giống portrait) — mỗi thẻ 1 hàng ngang trong cả 2 layout.
+- **Cột chip bên phải**: 4 chip xếp dọc, tự co dãn đều chiều cao màn hình (`flex-1`).
+- Nút **+/−** trong landscape: xếp **hàng ngang** cạnh nhau (flex-row), tự dãn chiều cao thẻ.
 - Khi thả chip thành công: thẻ target nhấp nháy nhẹ + (nếu bật âm thanh) phát tiếng.
 
 ### 7.2 Sidebar điều hướng
@@ -179,8 +181,9 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 - Chip = `useDraggable`; thẻ người chơi = `useDroppable`. Dùng `PointerSensor` + `TouchSensor` (kích hoạt sau khi giữ/nhích nhẹ để không cản scroll).
 - `DragOverlay` hiển thị chip "bay" theo ngón tay; thẻ đang hover → highlight (đổi viền/scale qua Framer Motion).
 - `onDragEnd`: nếu thả trúng 1 thẻ → áp luật điểm (mục 5.1); animate số điểm nhảy + thẻ nảy nhẹ; (nếu bật) phát tiếng.
-- Nút **−/+** trên thẻ (FR-3): bấm trực tiếp ±1, không qua drag, chỉ đổi điểm của chính thẻ đó (không zero-sum); nhấn giữ → auto-repeat tới khi thả tay.
-- Double-tap vào thẻ (FR-14, ngoài 2 nút −/+): tính lại điểm thẻ đó để tổng = 0 (mục 5.1); nên có animation/feedback ngắn (số điểm nhấp nháy) để báo đã cân bằng.
+- Nút **−/+** trên thẻ (FR-3): bấm trực tiếp ±1, không qua drag, chỉ đổi điểm của chính thẻ đó (không zero-sum); nhấn giữ → auto-repeat tới khi thả tay. Rộng 84px, tự dãn gần bằng chiều cao card (`self-stretch + flex-1`).
+- **Ảnh rùa** ở góc dưới trái: bấm/tap → random màu nền thẻ (FR-16); có `cursor-pointer` và scale-90 khi active. Không gây conflict với double-tap (vì double-tap bắt ở card div, không ở ảnh rùa).
+- Double-tap vào thẻ (FR-14, ngoài ảnh rùa và 2 nút −/+): tính lại điểm thẻ đó để tổng = 0 (mục 5.1); nên có animation/feedback ngắn (số điểm nhấp nháy) để báo đã cân bằng.
 - Animation khác bằng Framer Motion: `AnimatePresence` cho sidebar trượt/backdrop, thêm/xoá người chơi & mục lịch sử, transition modal.
 
 ### 7.4 Modal "Thêm người"
@@ -227,6 +230,7 @@ chiatienbia/
 │  └─ SettingsModal.tsx        # am thanh, doi ten/xoa nguoi choi
 ├─ lib/
 │  ├─ storage.ts               # readState/writeState (Blob | fs)
+│  ├─ app-state-context.tsx    # React context: localStorage (instant) + API (debounce)
 │  ├─ scoring.ts               # luat diem (muc 5.1)
 │  └─ types.ts                 # kieu du lieu (State, Player, Session...)
 ├─ data.json                   # chi dung khi dev local (gitignore)
@@ -290,10 +294,11 @@ chiatienbia/
 - **Header tối giản:** chỉ ☰ (toggle sidebar) + 🌗 (theme), không còn thanh công cụ nhiều icon.
 - **Sidebar** chứa 4 hành động phụ: Thêm người / Phiên mới / Lịch sử / Cài đặt (gồm âm thanh, đổi tên/xoá người).
 - Mỗi thẻ người chơi có thêm **nút −/+ chỉnh điểm thủ công** (±1/lần, giữ để lặp liên tục), độc lập với kéo–thả chip; **bỏ chức năng Undo/Reset riêng**.
-- **Giữ màu riêng cho mỗi thẻ người chơi** (field `color`, gán tự động theo bảng màu cố định — §6); nền xám trong wireframe chỉ là mockup thấp-fi, không phải màu cuối.
+- **Giữ màu riêng cho mỗi thẻ người chơi** (field `color`, gán tự động theo bảng màu cố định — §6); nền xám trong wireframe chỉ là mockup thấp-fi, không phải màu cuối. **Đổi màu** bằng cách tap vào ảnh rùa góc dưới trái (FR-16) — không dùng click vào số điểm (tránh conflict với double-tap FR-14).
 - **Xoá người chơi bị chặn nếu điểm ≠ 0** — phải đưa về 0 (nút −/+ hoặc double-tap FR-14) trước mới xoá được.
 - **Double-tap vào thẻ người chơi** (FR-14) tự động cân bằng điểm người đó để tổng tất cả = 0 (`điểm mới = điểm cũ − tổng hiện tại`) — công cụ nhanh xử lý phần lệch do `cháy`.
-- **Layout dọc (portrait) là layout đầy đủ chức năng**, không còn màn chặn "vui lòng xoay ngang".
+- **Layout dọc (portrait) là layout đầy đủ chức năng**, không còn màn chặn "vui lòng xoay ngang". **Landscape** cũng xếp cards dọc (không ngang), chip cột dọc bên phải.
 - Modal **Chia tiền** gộp vào luồng **Phiên mới** (1 modal, không tách riêng).
 - Chi tiết bố cục/kích thước/ảnh wireframe: xem **[`UI-DESIGN.md`](UI-DESIGN.md)**.
 - **Nhấn giữ vào tên để sửa tên trực tiếp (FR-15):** Nhấn giữ (long-press) 500ms vào tên của người chơi trên thẻ để hiển thị ô nhập sửa tên tại chỗ, tự động lưu khi bấm Enter hoặc click ra ngoài (blur). Giới hạn tối đa 12 ký tự và không được để trống.
+- **Lưu trữ hybrid** (FR-9): `localStorage` là primary (instant, offline-capable), `/api/state` là backup (server-side persistence). Load: localStorage trước → hydrate từ API. Save: localStorage ngay lập tức + API debounce 350ms. Đóng tab / tắt máy không mất dữ liệu; chỉ mất nếu xóa cache trình duyệt.
