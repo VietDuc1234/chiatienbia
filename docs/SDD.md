@@ -1,9 +1,11 @@
 # SDD — Web Tính Điểm & Chia Tiền Bi-a
 
 **Tên dự án:** chiatienbia
-**Phiên bản tài liệu:** 0.5 (thêm double-tap cân bằng zero-sum)
+**Phiên bản tài liệu:** 0.6 (chốt bước +/-, màu thẻ, chặn xoá khi điểm ≠ 0)
 **Ngày:** 2026-06-24
 
+> **Changelog 0.6:** chốt 3 quyết định nghiệp vụ còn treo: nút **−/+** mỗi lần bấm **±1 điểm**, **nhấn giữ để lặp liên tục**; **giữ màu riêng cho mỗi thẻ người chơi** (field `color` vẫn dùng, nền xám ở wireframe chỉ là mockup thấp-fi); **chặn xoá người chơi nếu điểm ≠ 0** (phải đưa về 0 qua FR-3/FR-14 trước). Xem FR-3, FR-5, §6, §12.
+>
 > **Changelog 0.5:** thêm **FR-14 — double-tap vào thẻ người chơi để tự động cân bằng điểm về tổng 0** (zero-sum), dùng để dồn nhanh phần lệch do `cháy` (mục 5.1 không zero-sum) về 1 người. Xem FR-14, §5.1, §12.
 >
 > **Changelog 0.4:** chốt thiết kế giao diện chi tiết ở [`UI-DESIGN.md`](UI-DESIGN.md) (ảnh wireframe ở [`wireframes/`](wireframes/)). Thay thanh công cụ 6 icon bằng **header tối giản** (☰ + 🌗) + **sidebar** chứa Thêm người/Phiên mới/Lịch sử/Cài đặt; thêm **nút −/+ chỉnh điểm thủ công** trên thẻ người chơi; **layout dọc (portrait)** nay là layout đầy đủ chức năng, không còn màn chặn xoay ngang; gộp modal Chia tiền vào luồng Phiên mới; Undo/Reset bị bỏ, âm thanh & đổi tên/xoá người chuyển vào Cài đặt.
@@ -44,11 +46,11 @@ Web app đơn giản, dùng trên điện thoại (cả 2 chiều ngang/dọc), 
 
 | Mã | Tính năng | Mô tả |
 |----|-----------|-------|
-| FR-1 | Hiển thị người chơi | Mỗi người 1 thẻ: TÊN — ĐIỂM. Là **vùng thả** (drop target). Điểm có thể âm. Thẻ cỡ lớn, dễ bấm/kéo (UI-DESIGN §4). |
+| FR-1 | Hiển thị người chơi | Mỗi người 1 thẻ: TÊN — ĐIỂM, nền/viền theo **màu riêng** của người đó (gán khi thêm, xem FR-4/§6). Là **vùng thả** (drop target). Điểm có thể âm. Thẻ cỡ lớn, dễ bấm/kéo (UI-DESIGN §4). |
 | FR-2 | Ghi điểm bằng kéo–thả | 4 **chip** cỡ lớn: `.`, `14`, `15`, `cháy` (cột dọc ở landscape, hàng ngang ở portrait). Kéo 1 chip thả vào thẻ người chơi → áp dụng luật điểm (mục 5). Hỗ trợ cả chuột & cảm ứng. |
-| FR-3 | Chỉnh điểm thủ công | Mỗi thẻ người chơi có 2 nút **−/+** để sửa nhanh điểm của chính người đó (không qua kéo–thả, không áp dụng công thức zero-sum mục 5.1). *(Thay cho Undo ở bản cũ — đã bỏ, xem §12.)* |
-| FR-4 | Thêm người chơi | Mục **"👤+ Thêm người"** trong sidebar → nhập tên → người mới (điểm 0, tự gán màu). **Tối đa 4 người** (đủ 4 thì khoá mục). |
-| FR-5 | Đổi tên / Xoá người | Thực hiện trong modal **"⚙️ Cài đặt"** (sidebar): danh sách người chơi, mỗi người có nút đổi tên & xoá (có xác nhận). |
+| FR-3 | Chỉnh điểm thủ công | Mỗi thẻ người chơi có 2 nút **−/+**: mỗi lần bấm đổi **±1 điểm**; **nhấn giữ** để tự lặp liên tục (auto-repeat) cho tới khi thả tay. Không qua kéo–thả, không áp dụng công thức zero-sum mục 5.1. *(Thay cho Undo ở bản cũ — đã bỏ, xem §12.)* |
+| FR-4 | Thêm người chơi | Mục **"👤+ Thêm người"** trong sidebar → nhập tên → người mới (điểm 0, **tự gán màu** theo bảng màu cố định kế tiếp, xem §6). **Tối đa 4 người** (đủ 4 thì khoá mục). |
+| FR-5 | Đổi tên / Xoá người | Thực hiện trong modal **"⚙️ Cài đặt"** (sidebar): danh sách người chơi, mỗi người có nút đổi tên & xoá. **Nút xoá bị khoá (disable) nếu điểm người đó ≠ 0** — phải đưa điểm về 0 (qua FR-3 hoặc double-tap FR-14) mới xoá được; có hiện gợi ý/tooltip khi bị khoá. |
 | FR-6 | Bật/tắt âm thanh | Trong modal **"⚙️ Cài đặt"** (sidebar): bật/tắt tiếng khi ghi điểm. Lưu trạng thái. *(Trước đây là icon riêng trên thanh công cụ.)* |
 | FR-7 | Phiên mới & chia tiền | Mục **"➕ Phiên mới"** trong sidebar → nhập **giá mỗi điểm (VND)** → xem bảng: điểm, **tiền = điểm × giá**, nhãn TRẢ/NHẬN → **"Lưu & phiên mới"** lưu phiên vào lịch sử rồi reset điểm về 0 (**giữ người chơi**). Giá = 0 → **cảnh báo xác nhận** trước khi lưu. *(Gộp 2 chức năng Chia tiền + Lưu phiên/Phiên mới của bản cũ thành 1 luồng.)* |
 | FR-8 | Lịch sử | Mục **"📜 Lịch sử"** trong sidebar → danh sách phiên đã lưu (mới nhất trên cùng): ngày giờ, giá, điểm & tiền từng người. Mỗi mục có nút **Copy** (text) và **Xoá**. |
@@ -134,6 +136,7 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 - `scoring`: đơn vị điểm các chip (mặc định như trên).
 - `history`: mảng phiên đã lưu (mới nhất ở đầu), giới hạn ~100 mục.
 - *Ghi chú:* theme (light/dark) lưu ở `localStorage` phía client, không lưu trong `data.json`/Blob.
+- *Màu thẻ (`color`):* gán tự động theo thứ tự thêm người, lấy từ bảng màu cố định 4 màu (đủ cho tối đa 4 người): `#ff4d4d` (đỏ), `#ffeb3b` (vàng), `#ff9800` (cam), `#2196f3` (xanh dương). v1 không cho chọn màu tuỳ ý.
 
 ### 6.1 Nơi lưu
 - **Prod (Vercel):** lưu nguyên object trên dưới dạng **một blob JSON** tên `state.json` trong **Vercel Blob** (`@vercel/blob`). Mỗi lần ghi: `put('state.json', json, { access:'public', allowOverwrite:true, addRandomSuffix:false })`; đọc: `fetch(blobUrl)` hoặc `head`/`list`.
@@ -162,7 +165,7 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 │  └────────────────────────────────┘  │                │
 └──────────────────────────────────────┴────────────────┘
 ```
-- **Thẻ người chơi** cỡ lớn, là vùng thả chip, có 2 nút **−/+** chỉnh điểm thủ công (FR-3); double-tap vào thẻ để cân bằng zero-sum (FR-14).
+- **Thẻ người chơi** cỡ lớn, nền/viền theo màu riêng từng người (§6), là vùng thả chip, có 2 nút **−/+** chỉnh điểm thủ công ±1/lần, giữ để lặp (FR-3); double-tap vào thẻ để cân bằng zero-sum (FR-14).
 - **Cột phải**: 4 **chip** kéo được, cỡ lớn: `.`, `14`, `15`, `cháy` (viền/màu đỏ riêng). Khi đang kéo: chip "bay" theo ngón tay, thẻ người chơi nào ở dưới thì **sáng viền** (highlight) báo sẽ thả vào đó.
 - **Header** chỉ 2 icon: ☰ (mở/đóng sidebar, FR-12) và 🌗 (đổi theme, FR-13). Ở portrait, thẻ xếp chồng và chip xếp hàng ngang dưới thẻ (xem UI-DESIGN.md §6).
 - Khi thả chip thành công: thẻ target nhấp nháy nhẹ + (nếu bật âm thanh) phát tiếng.
@@ -175,7 +178,7 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 - Chip = `useDraggable`; thẻ người chơi = `useDroppable`. Dùng `PointerSensor` + `TouchSensor` (kích hoạt sau khi giữ/nhích nhẹ để không cản scroll).
 - `DragOverlay` hiển thị chip "bay" theo ngón tay; thẻ đang hover → highlight (đổi viền/scale qua Framer Motion).
 - `onDragEnd`: nếu thả trúng 1 thẻ → áp luật điểm (mục 5.1); animate số điểm nhảy + thẻ nảy nhẹ; (nếu bật) phát tiếng.
-- Nút **−/+** trên thẻ (FR-3): bấm trực tiếp, không qua drag, chỉ đổi điểm của chính thẻ đó (không zero-sum).
+- Nút **−/+** trên thẻ (FR-3): bấm trực tiếp ±1, không qua drag, chỉ đổi điểm của chính thẻ đó (không zero-sum); nhấn giữ → auto-repeat tới khi thả tay.
 - Double-tap vào thẻ (FR-14, ngoài 2 nút −/+): tính lại điểm thẻ đó để tổng = 0 (mục 5.1); nên có animation/feedback ngắn (số điểm nhấp nháy) để báo đã cân bằng.
 - Animation khác bằng Framer Motion: `AnimatePresence` cho sidebar trượt/backdrop, thêm/xoá người chơi & mục lịch sử, transition modal.
 
@@ -191,7 +194,7 @@ Ví dụ (n = 4): `.` → target **+30**, ba người kia mỗi người **−10
 
 ### 7.7 Modal "Cài đặt"
 - Bật/tắt âm thanh khi ghi điểm (FR-6).
-- Danh sách người chơi: đổi tên, xoá (có xác nhận) — FR-5.
+- Danh sách người chơi: đổi tên; nút xoá — **disable nếu điểm ≠ 0** (kèm gợi ý "đưa điểm về 0 trước"), bấm được kèm xác nhận khi điểm = 0 — FR-5.
 
 ---
 
@@ -255,7 +258,9 @@ chiatienbia/
 - Tên trùng → cho phép (phân biệt bằng id).
 - Giá điểm trống/0 → tiền = 0, lưu phiên cần xác nhận.
 - `data.json` hỏng → server trả trạng thái mặc định (không crash).
-- Nút **−/+** chỉnh điểm thủ công: không giới hạn biên (điểm có thể âm); bấm liên tục vẫn áp dụng từng bước.
+- Nút **−/+** chỉnh điểm thủ công: mỗi lần bấm ±1, không giới hạn biên (điểm có thể âm); nhấn giữ lặp liên tục tới khi thả tay.
+- Xoá người chơi khi điểm ≠ 0 → **bị chặn** (nút disable), không có lựa chọn "vẫn xoá" — phải đưa điểm về 0 trước (FR-3/FR-14).
+- Xoá người chơi cuối cùng (về 0 người) → cho phép, quay lại trạng thái "chưa có ai" (xem edge case "0 người" trên).
 - Double-tap (FR-14) khi tổng đã = 0 → không đổi điểm (đã cân bằng).
 - Double-tap khi chỉ có 1 người chơi → điểm người đó về 0 (vì `total` chính là điểm của họ).
 - Double-tap không có Undo riêng — muốn sửa lại thì dùng nút −/+ (FR-3) hoặc double-tap sang người khác.
@@ -267,7 +272,7 @@ chiatienbia/
 2. **M1 — Lưu trữ & API:** `lib/types.ts`, `lib/storage.ts` (Blob|fs), `app/api/state/route.ts`, `lib/scoring.ts`.
 3. **M2 — Giao diện khung:** `Header` (☰/🌗), `Sidebar` (trượt + backdrop), `Board` layout landscape & portrait, `PlayerCard` (gồm nút −/+), cột/hàng `ScoreChip`, theme light/dark (localStorage).
 4. **M3 — Kéo–thả & luật điểm:** @dnd-kit + Framer Motion, áp công thức zero-sum + cháy; nút −/+ chỉnh điểm thủ công; double-tap cân bằng zero-sum (FR-14).
-5. **M4 — Người chơi & cài đặt:** `AddPlayerModal` (thêm ≤4), `SettingsModal` (đổi tên/xoá người, bật/tắt âm thanh), tự lưu (debounce).
+5. **M4 — Người chơi & cài đặt:** `AddPlayerModal` (thêm ≤4, tự gán màu theo bảng cố định), `SettingsModal` (đổi tên/xoá người — disable xoá khi điểm ≠ 0, bật/tắt âm thanh), tự lưu (debounce).
 6. **M5 — Phiên mới & chia tiền:** `NewSessionModal` (giá điểm → tính tiền → lưu phiên → reset điểm về 0, giữ người).
 7. **M6 — Lịch sử:** `HistoryModal`, copy/xoá phiên.
 8. **M7 — Hoàn thiện & deploy:** kiểm thử cả 2 chiều màn hình (landscape/portrait) & 2 theme, tạo Vercel Blob store, deploy Vercel.
@@ -283,7 +288,9 @@ chiatienbia/
 - **Tech stack:** Next.js 16 (App Router) + React 19 + TypeScript; Tailwind CSS; Framer Motion; @dnd-kit; lưu trữ **Vercel Blob** (prod) / `data.json` fs (dev).
 - **Header tối giản:** chỉ ☰ (toggle sidebar) + 🌗 (theme), không còn thanh công cụ nhiều icon.
 - **Sidebar** chứa 4 hành động phụ: Thêm người / Phiên mới / Lịch sử / Cài đặt (gồm âm thanh, đổi tên/xoá người).
-- Mỗi thẻ người chơi có thêm **nút −/+ chỉnh điểm thủ công**, độc lập với kéo–thả chip; **bỏ chức năng Undo/Reset riêng**.
+- Mỗi thẻ người chơi có thêm **nút −/+ chỉnh điểm thủ công** (±1/lần, giữ để lặp liên tục), độc lập với kéo–thả chip; **bỏ chức năng Undo/Reset riêng**.
+- **Giữ màu riêng cho mỗi thẻ người chơi** (field `color`, gán tự động theo bảng màu cố định — §6); nền xám trong wireframe chỉ là mockup thấp-fi, không phải màu cuối.
+- **Xoá người chơi bị chặn nếu điểm ≠ 0** — phải đưa về 0 (nút −/+ hoặc double-tap FR-14) trước mới xoá được.
 - **Double-tap vào thẻ người chơi** (FR-14) tự động cân bằng điểm người đó để tổng tất cả = 0 (`điểm mới = điểm cũ − tổng hiện tại`) — công cụ nhanh xử lý phần lệch do `cháy`.
 - **Layout dọc (portrait) là layout đầy đủ chức năng**, không còn màn chặn "vui lòng xoay ngang".
 - Modal **Chia tiền** gộp vào luồng **Phiên mới** (1 modal, không tách riêng).
