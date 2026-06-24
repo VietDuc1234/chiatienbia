@@ -44,29 +44,24 @@ const AppStateContext = createContext<AppStateContextValue | null>(null);
 export function AppStateProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState | null>(() => readFromLocalStorage());
   const skipNextSave = useRef(state !== null);
-  const hasLocalEdit = useRef(false);
-  const latestStateRef = useRef(state);
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingSaveRef = useRef(false);
+  const hadLocalDataOnMount = useRef(state !== null);
 
+  // localStorage là nguồn dữ liệu chính của thiết bị này (ghi đồng bộ, không qua mạng).
+  // Chỉ lấy từ server khi máy này CHƯA có dữ liệu local nào (máy mới/lần đầu dùng) —
+  // server không bao giờ ghi đè dữ liệu local đã có, nên đóng trình duyệt trước khi
+  // server lưu xong sẽ không làm mất điểm vừa ghi.
   useEffect(() => {
-    latestStateRef.current = state;
-  }, [state]);
-
-  // Load: localStorage đã đọc ngay khi init state (instant) → API sau (sync từ server)
-  useEffect(() => {
+    if (hadLocalDataOnMount.current) return;
     let active = true;
     fetch("/api/state")
       .then((res) => res.json())
       .then((data: AppState) => {
-        // Nếu người dùng đã sửa state (ghi điểm...) trong lúc chờ API,
-        // bỏ qua response cũ này để không đè mất thay đổi mới hơn.
-        if (!active || hasLocalEdit.current) return;
+        if (!active) return;
         skipNextSave.current = true;
         setState(data);
       })
       .catch(() => {
-        // Offline hoặc API lỗi — giữ nguyên localStorage
+        // Offline hoặc API lỗi — giữ trạng thái mặc định
       });
     return () => {
       active = false;
@@ -91,7 +86,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
 
-  // Save: localStorage ngay lập tức + API debounce
+  // Save: localStorage ngay lập tức (nguồn chính) + API debounce (chỉ để backup máy mới)
   useEffect(() => {
     if (state === null) return;
     if (skipNextSave.current) {
@@ -99,60 +94,20 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    hasLocalEdit.current = true;
     writeToLocalStorage(state);
-    pendingSaveRef.current = true;
 
-    saveTimerRef.current = setTimeout(() => {
-      saveTimerRef.current = null;
+    const timer = setTimeout(() => {
       fetch("/api/state", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(state),
-      })
-        .catch(() => {
-          // API lỗi — localStorage đã lưu rồi, không cần xử lý thêm
-        })
-        .finally(() => {
-          pendingSaveRef.current = false;
-        });
+      }).catch(() => {
+        // API lỗi — localStorage đã lưu rồi, không cần xử lý thêm
+      });
     }, SAVE_DEBOUNCE_MS);
 
-    return () => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
-    };
+    return () => clearTimeout(timer);
   }, [state]);
-
-  // Đóng tab/trình duyệt trước khi debounce/request kịp xong → mất bản ghi mới nhất.
-  // pendingSaveRef vẫn true suốt từ lúc bắt đầu debounce cho tới khi fetch POST thật sự
-  // hoàn tất (không tắt ngay khi timer chạy), nên flush phải bắt được cả lúc fetch đang bay,
-  // vì trình duyệt có thể hủy fetch đó khi trang đóng — sendBeacon mới sống sót qua unload.
-  useEffect(() => {
-    function flushPendingSave() {
-      if (!pendingSaveRef.current || !latestStateRef.current) return;
-      pendingSaveRef.current = false;
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = null;
-      }
-      const blob = new Blob([JSON.stringify(latestStateRef.current)], { type: "application/json" });
-      navigator.sendBeacon("/api/state", blob);
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === "hidden") flushPendingSave();
-    }
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("pagehide", flushPendingSave);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("pagehide", flushPendingSave);
-    };
-  }, []);
 
   return <AppStateContext.Provider value={{ state, setState }}>{children}</AppStateContext.Provider>;
 }
