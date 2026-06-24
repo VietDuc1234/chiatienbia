@@ -17,8 +17,9 @@ export function ChipFace({ chip }: { chip: ChipType }) {
 
   return (
     <div
-      className={`flex shrink-0 select-none items-center justify-center rounded-full border-2 border-dashed font-bold transition-all
-        portrait:size-20 portrait:text-2xl landscape:size-[96px] landscape:text-3xl
+      className={`flex shrink-0 select-none items-center justify-center rounded-xl border-2 border-dashed font-bold transition-all
+        portrait:size-20 portrait:text-2xl
+        landscape:w-full landscape:flex-1 landscape:text-3xl
         ${isBurn ? "border-red-500 text-red-500 bg-red-500/5" : "border-foreground/50 text-foreground/80 bg-foreground/5"}`}
     >
       {isBurn ? (
@@ -55,7 +56,7 @@ export default function ScoreChip({ chip }: { chip: ChipType }) {
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`cursor-grab touch-none ${isDragging ? "opacity-30" : ""}`}
+      className={`cursor-grab touch-none portrait:shrink-0 landscape:flex-1 landscape:flex landscape:w-full ${isDragging ? "opacity-30" : ""}`}
     >
       <ChipFace chip={chip} />
     </div>

@@ -114,8 +114,8 @@ export default function Board() {
         <SettingsModal open={activeModal === "settings"} onClose={() => setActiveModal(null)} />
 
         <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-          <main className="flex flex-1 gap-3 overflow-auto p-3 portrait:flex-col landscape:flex-row">
-            <div className="flex flex-1 gap-3 portrait:flex-col landscape:flex-row">
+          <main className="flex flex-1 overflow-hidden p-3 gap-3 flex-col portrait:flex-col landscape:flex-row">
+            <div className="flex flex-1 flex-col gap-3 overflow-auto">
               {players.length === 0 ? (
                 <p className="m-auto text-foreground/60">Chưa có người chơi — mở sidebar để thêm.</p>
               ) : (
@@ -141,7 +141,9 @@ export default function Board() {
               )}
             </div>
 
-            <div className="flex shrink-0 gap-3 my-5 portrait:flex-row portrait:justify-center landscape:flex-col">
+            <div className="flex shrink-0 gap-2
+              portrait:flex-row portrait:flex-wrap portrait:justify-center portrait:my-2
+              landscape:flex-col landscape:h-full landscape:w-16 landscape:overflow-hidden">
               {CHIPS.map((chip) => (
                 <ScoreChip key={chip} chip={chip} />
               ))}

@@ -160,9 +160,7 @@ export default function PlayerCard({
     <div
       ref={setNodeRef}
       onDoubleClick={onDoubleTap}
-      className="relative overflow-hidden flex min-w-0 flex-1 select-none items-center gap-3 rounded-2xl p-4 transition
-        portrait:h-[110px] portrait:flex-row
-        landscape:h-full landscape:flex-col landscape:justify-between landscape:gap-4 landscape:py-6"
+      className="relative overflow-hidden flex min-w-0 flex-1 select-none items-center gap-2 rounded-2xl h-[110px] flex-row px-3 py-2 transition"
       style={{
         backgroundColor: player.color,
         boxShadow: isOver ? `0 0 0 4px ${player.color}66` : undefined,
@@ -171,10 +169,14 @@ export default function PlayerCard({
     >
       <Image
         src="/turtle.png"
-        alt=""
+        alt="Đổi màu"
         width={96}
         height={96}
-        className="absolute bottom-[-10px] left-[-10px] w-24 h-24 pointer-events-none select-none object-contain z-0"
+        onClick={(e) => {
+          e.stopPropagation();
+          onColorChange?.(generateRandomColor());
+        }}
+        className="absolute bottom-[-10px] left-[-10px] w-24 h-24 select-none object-contain z-10 cursor-pointer active:scale-90 transition-transform"
       />
 
       {isEditingName ? (
@@ -192,12 +194,12 @@ export default function PlayerCard({
           onPointerUp={(e) => e.stopPropagation()}
           onDoubleClick={(e) => e.stopPropagation()}
           maxLength={12}
-          className={`bg-transparent border-b-2 outline-none w-full max-w-[35%] font-extrabold portrait:text-[32px] landscape:text-[32px] relative z-10 ${textClass} ${borderClass}`}
+          className={`bg-transparent border-b-2 outline-none w-full max-w-[30%] font-extrabold text-[28px] relative z-10 ${textClass} ${borderClass}`}
         />
       ) : (
         <span
           {...longPressHandlers}
-          className={`truncate font-extrabold max-w-[35%] portrait:text-[32px] landscape:text-[32px] cursor-pointer relative z-10 ${textClass}`}
+          className={`truncate font-extrabold max-w-[30%] text-[28px] cursor-pointer relative z-10 ${textClass}`}
         >
           {player.name}
         </span>
@@ -208,27 +210,20 @@ export default function PlayerCard({
         initial={{ scale: 1.3 }}
         animate={{ scale: 1 }}
         transition={{ duration: 0.2 }}
-        onClick={(e) => {
-          e.stopPropagation();
-          const randomColor = generateRandomColor();
-          onColorChange?.(randomColor);
-        }}
-        className={`flex-1 truncate text-center font-black tabular-nums relative z-10 cursor-pointer
-          portrait:text-[48px]
-          landscape:flex landscape:items-center landscape:justify-center landscape:text-[52px] ${textClass}`}
+        className={`flex-1 truncate text-center font-black tabular-nums text-[48px] flex items-center justify-center relative z-10 ${textClass}`}
       >
         {player.score}
       </motion.span>
 
-      <div className="flex flex-col gap-1.5 shrink-0 relative z-10">
+      <div className="flex flex-col shrink-0 gap-1.5 self-stretch py-0 relative z-10">
         <button
           type="button"
           {...incHandlers}
           onDoubleClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => e.preventDefault()}
           aria-label="Cộng 1 điểm"
-          className={`flex touch-none items-center justify-center rounded-lg border-2 text-2xl font-bold active:scale-95
-            portrait:size-[42px] landscape:size-[52px] ${textClass} ${borderClass}`}
+          className={`flex touch-none items-center justify-center rounded-xl border-2 text-3xl font-bold active:scale-95
+            flex-1 w-[84px] ${textClass} ${borderClass}`}
         >
           +
         </button>
@@ -238,8 +233,8 @@ export default function PlayerCard({
           onDoubleClick={(e) => e.stopPropagation()}
           onContextMenu={(e) => e.preventDefault()}
           aria-label="Trừ 1 điểm"
-          className={`flex touch-none items-center justify-center rounded-lg border-2 text-2xl font-bold active:scale-95
-            portrait:size-[42px] landscape:size-[52px] ${textClass} ${borderClass}`}
+          className={`flex touch-none items-center justify-center rounded-xl border-2 text-3xl font-bold active:scale-95
+            flex-1 w-[84px] ${textClass} ${borderClass}`}
         >
           −
         </button>
