@@ -1,6 +1,7 @@
 "use client";
 
 import { useDroppable } from "@dnd-kit/core";
+import { motion } from "motion/react";
 import { useEffect, useRef } from "react";
 import type { Player } from "@/lib/types";
 
@@ -74,13 +75,17 @@ export default function PlayerCard({
         {player.name}
       </span>
 
-      <span
+      <motion.span
+        key={player.score}
+        initial={{ scale: 1.3 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.2 }}
         className="flex-1 truncate text-center text-3xl font-extrabold tabular-nums
           portrait:flex-none portrait:text-[32px]
           landscape:flex landscape:items-center landscape:justify-center landscape:text-[52px]"
       >
         {player.score}
-      </span>
+      </motion.span>
 
       <div className="flex gap-2">
         <button

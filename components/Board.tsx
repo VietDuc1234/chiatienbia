@@ -21,6 +21,7 @@ import NewSessionModal from "./NewSessionModal";
 import HistoryModal from "./HistoryModal";
 import { useAppState } from "@/lib/app-state-context";
 import { applyChip, applyDoubleTapBalance, applyManualAdjust } from "@/lib/scoring";
+import { playScoreSound } from "@/lib/sound";
 import type { ChipType, Player } from "@/lib/types";
 
 const CHIPS: ChipType[] = ["dot", "ball14", "ball15", "burn"];
@@ -64,6 +65,7 @@ export default function Board() {
     const targetId = event.over?.data.current?.playerId as number | undefined;
     if (!chip || targetId === undefined || !state) return;
     updatePlayers((players) => applyChip(players, targetId, chip, state.scoring));
+    if (state.soundOn) playScoreSound();
   }
 
   if (!state) {
