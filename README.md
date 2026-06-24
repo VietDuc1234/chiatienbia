@@ -14,11 +14,16 @@ Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS · Framer Moti
 ```bash
 npm install
 npm run dev
-# mở http://localhost:3000 (xoay ngang điện thoại)
+# mở http://localhost:3000 — dùng được cả khi xoay ngang hoặc dọc màn hình
 ```
 
+## Deploy lên Vercel
+1. Tạo project trên Vercel từ repo này.
+2. Tạo một **Vercel Blob store**, gắn vào project — Vercel sẽ tự thêm biến môi trường `BLOB_READ_WRITE_TOKEN`. Không có biến này thì app tự fallback ghi vào `data.json` (chỉ phù hợp dev local, không bền trên serverless).
+3. Deploy — không cần cấu hình gì thêm.
+
 ## Tài liệu thiết kế
-Xem [`docs/SDD.md`](docs/SDD.md) — đặc tả chức năng, luật điểm, mô hình dữ liệu, kế hoạch triển khai.
+Xem [`docs/SDD.md`](docs/SDD.md) — đặc tả chức năng, luật điểm, mô hình dữ liệu, kế hoạch triển khai. Xem [`docs/UI-DESIGN.md`](docs/UI-DESIGN.md) cho chi tiết giao diện.
 
 ## Trạng thái
-Đang phát triển theo SDD (M1→M7). Code hiện tại là bản nháp khung, sẽ hoàn thiện theo spec.
+Hoàn thành theo SDD (M0→M7): kéo–thả ghi điểm, chỉnh tay ±/double-tap cân bằng, quản lý người chơi, phiên mới & chia tiền, lịch sử, âm thanh, theme sáng/tối, layout dọc & ngang.
