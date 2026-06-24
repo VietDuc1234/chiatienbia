@@ -14,9 +14,10 @@ function formatMoney(amount: number) {
 interface NewSessionModalProps {
   open: boolean;
   onClose: () => void;
+  onOpenHistory?: () => void;
 }
 
-export default function NewSessionModal({ open, onClose }: NewSessionModalProps) {
+export default function NewSessionModal({ open, onClose, onOpenHistory }: NewSessionModalProps) {
   const { state, setState } = useAppState();
 
   if (!state) return null;
@@ -134,22 +135,35 @@ export default function NewSessionModal({ open, onClose }: NewSessionModalProps)
           </table>
         )}
 
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-4 py-2 text-base hover:bg-foreground/10"
-          >
-            Đóng
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveAndReset}
-            disabled={players.length === 0}
-            className="rounded-lg bg-foreground px-4 py-2 text-base font-semibold text-background disabled:opacity-40"
-          >
-            Lưu &amp; phiên mới
-          </button>
+        <div className="flex items-center justify-between gap-2">
+          {onOpenHistory ? (
+            <button
+              type="button"
+              onClick={onOpenHistory}
+              className="rounded-lg px-3 py-2 text-sm hover:bg-foreground/10"
+            >
+              📜 Lịch sử
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-base hover:bg-foreground/10"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAndReset}
+              disabled={players.length === 0}
+              className="rounded-lg bg-foreground px-4 py-2 text-base font-semibold text-background disabled:opacity-40"
+            >
+              Lưu &amp; phiên mới
+            </button>
+          </div>
         </div>
       </div>
     </Modal>
